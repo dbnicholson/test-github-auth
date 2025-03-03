@@ -4,4 +4,10 @@ html
   body
     h1= message
     |
-    a(href=`https://github.com/login/oauth/authorize?client_id=${client_id}`) Login with GitHub
+    if authenticated
+      a(href='/logout') Logout
+      |
+      p Name: #{fullname}
+      p Username: #{username}
+    else
+      a(href=`https://github.com/login/oauth/authorize?client_id=${client_id}`) Login with GitHub

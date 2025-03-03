@@ -49,11 +49,38 @@ async function get_token(code) {
 
 app.set('view engine', 'pug')
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  const authenticated = Boolean(req.session.github_token)
+
+  let username = ''
+  let fullname = ''
+  if (authenticated) {
+    const resp = await fetch('https://api.github.com/user', {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${req.session.github_token}`,
+      },
+    })
+
+    const user_data = await resp.json()
+    username = user_data.login
+    fullname = user_data.name
+  }
+
   res.render('index', {
     title: 'Main',
     message: 'Hello there!',
     client_id: CLIENT_ID,
+    authenticated: authenticated,
+    username: username,
+    fullname: fullname,
+  })
+})
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    res.redirect(302, '/')
   })
 })
 
@@ -62,21 +89,15 @@ app.get('/github/callback', async (req, res) => {
   const token_data = await get_token(code)
   console.log({token_data})
 
-  const token = token_data.access_token
-  let status
-  let message
-  if (token) {
-    req.session.github_token = token
-    status = 200
-    message = `Authorized with code ${code} and token ${token}`
-  } else {
-    status = token_data.status
-    message = token_data.error
+  if (!token_data.access_token) {
+    res.status(token_data.status).render('github/callback', {
+      title: 'Callback',
+      message: token_data.error,
+    })
   }
-  res.status(status).render('github/callback', {
-    title: 'Callback',
-    message: message,
-  })
+
+  req.session.github_token = token_data.access_token
+  res.redirect(302, '/')
 })
 
 app.listen(port, () => {
