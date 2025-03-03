@@ -47,8 +47,9 @@ app.get('/', (req, res) => {
 app.get('/github/callback', async (req, res) => {
   const code = req.query.code
   const token_data = await get_token(code)
-  const token = token_data.access_token
+  console.log({token_data})
 
+  const token = token_data.access_token
   let status
   let message
   if (token) {
