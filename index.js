@@ -2,12 +2,25 @@
 
 const express = require('express')
 const dotenv = require('dotenv')
+const session = require('express-session')
+const sessionFileStore = require('session-file-store')
 
 dotenv.config()
 const app = express()
 const port = 3000
+const FileStore = sessionFileStore(session)
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+const SESSION_SECRET = process.env.SESSION_SECRET || '7ahGhvAo4fEEFPCa61voAjKfNnH33206Ceierc7T'
+
+const fileStoreOptions = {}
+const sessionOptions = {
+  store: new FileStore(fileStoreOptions),
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+}
+app.use(session(sessionOptions))
 
 async function get_token(code) {
   const form = new FormData()
@@ -53,6 +66,7 @@ app.get('/github/callback', async (req, res) => {
   let status
   let message
   if (token) {
+    req.session.github_token = token
     status = 200
     message = `Authorized with code ${code} and token ${token}`
   } else {
