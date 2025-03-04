@@ -7,7 +7,12 @@ html
     if authenticated
       a(href='/logout') Logout
       |
-      p Name: #{fullname}
-      p Username: #{username}
+      p Name: #{user.name}
+      p Username: #{user.login}
+      |
+      p endlessm/godot-block-coding issues:
+      each issue in issues
+        p
+          a(href=issue.html_url) #{issue.title} (##{issue.number})
     else
       a(href=`https://github.com/login/oauth/authorize?client_id=${client_id}`) Login with GitHub

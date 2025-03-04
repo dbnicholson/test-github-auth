@@ -53,22 +53,29 @@ app.set('view engine', 'pug')
 app.get('/', async (req, res) => {
   const authenticated = Boolean(req.session.github_token)
 
-  let username = ''
-  let fullname = ''
+  let user, issues
   if (authenticated) {
     const octokit = new Octokit({ auth: req.session.github_token })
-    const { data } = await octokit.rest.users.getAuthenticated();
-    username = data.login
-    fullname = data.name
+    let resp
+
+    resp = await octokit.rest.users.getAuthenticated()
+    user = resp.data
+
+    resp = await octokit.rest.issues.listForRepo({
+      owner: 'endlessm',
+      repo: 'godot-block-coding',
+      per_page: 10,
+    })
+    issues = resp.data
   }
 
   res.render('index', {
     title: 'Main',
     message: 'Hello there!',
     client_id: CLIENT_ID,
-    authenticated: authenticated,
-    username: username,
-    fullname: fullname,
+    authenticated,
+    user,
+    issues,
   })
 })
 
