@@ -4,15 +4,17 @@ html
   body
     h1= message
     |
-    if authenticated
+    if user
       a(href='/logout') Logout
       |
+      h2 User
       p Name: #{user.name}
       p Username: #{user.login}
       |
-      p endlessm/godot-block-coding issues:
-      each issue in issues
-        p
-          a(href=issue.html_url) #{issue.title} (##{issue.number})
     else
       a(href=`https://github.com/login/oauth/authorize?client_id=${client_id}`) Login with GitHub
+    |
+    h2 endlessm/godot-block-coding issues:
+    each issue in issues
+      p
+        a(href=issue.html_url) #{issue.title} (##{issue.number})
