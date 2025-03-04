@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-const express = require('express')
-const dotenv = require('dotenv')
-const session = require('express-session')
-const sessionFileStore = require('session-file-store')
+import express from 'express'
+import dotenv from 'dotenv'
+import session from 'express-session'
+import sessionFileStore from 'session-file-store'
 
 dotenv.config()
 const app = express()
