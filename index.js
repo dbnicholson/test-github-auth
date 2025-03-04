@@ -4,6 +4,7 @@ import express from 'express'
 import dotenv from 'dotenv'
 import session from 'express-session'
 import sessionFileStore from 'session-file-store'
+import { Octokit } from 'octokit'
 
 dotenv.config()
 const app = express()
@@ -55,17 +56,10 @@ app.get('/', async (req, res) => {
   let username = ''
   let fullname = ''
   if (authenticated) {
-    const resp = await fetch('https://api.github.com/user', {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${req.session.github_token}`,
-      },
-    })
-
-    const user_data = await resp.json()
-    username = user_data.login
-    fullname = user_data.name
+    const octokit = new Octokit({ auth: req.session.github_token })
+    const { data } = await octokit.rest.users.getAuthenticated();
+    username = data.login
+    fullname = data.name
   }
 
   res.render('index', {
