@@ -8,11 +8,11 @@ html
       a(href='/logout') Logout
       |
       h2 User
-      p Name: #{user.name}
-      p Username: #{user.login}
+      p Name: #{user.displayName}
+      p Username: #{user.username}
       |
     else
-      a(href=`https://github.com/login/oauth/authorize?client_id=${client_id}`) Login with GitHub
+      a(href='/login') Login with GitHub
     |
     h2 endlessm/godot-block-coding issues:
     each issue in issues

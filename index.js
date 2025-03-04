@@ -5,6 +5,8 @@ import dotenv from 'dotenv'
 import session from 'express-session'
 import sessionFileStore from 'session-file-store'
 import { Octokit } from 'octokit'
+import passport from 'passport'
+import { Strategy as GitHubStrategy } from 'passport-github2'
 
 dotenv.config()
 const app = express()
@@ -22,42 +24,37 @@ const sessionOptions = {
   saveUninitialized: false,
 }
 app.use(session(sessionOptions))
-
-async function get_token(code) {
-  const form = new FormData()
-  form.append('client_id', CLIENT_ID)
-  form.append('client_secret', CLIENT_SECRET)
-  form.append('code', code)
-
-  const resp = await fetch(
-    'https://github.com/login/oauth/access_token',
-    {
-      method: 'POST',
-      body: form,
-      headers: { Accept: 'application/json' },
-    }
-  )
-
-  if (resp.status !== 200) {
-    return {
-      status: resp.status,
-      error: `Failed to acquire token (${resp.status})`,
-    }
-  }
-
-  return resp.json()
-}
-
+app.use(passport.authenticate('session'));
 app.set('view engine', 'pug')
 
-app.get('/', async (req, res) => {
-  const octokit = new Octokit({ auth: req.session.github_token })
+passport.serializeUser((user, done) => {
+  done(null, user);
+})
 
-  let user
-  if (req.session.github_token) {
-    ({ data: user } = await octokit.rest.users.getAuthenticated())
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+})
+
+passport.use(new GitHubStrategy(
+  {
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: '/github/callback',
+  },
+  (accessToken, refreshToken, profile, done) => {
+    const user = {
+      id: profile.id,
+      username: profile.username,
+      displayName: profile.displayName,
+      accessToken,
+      refreshToken,
+    }
+    return done(null, user)
   }
+))
 
+app.get('/', async (req, res) => {
+  const octokit = new Octokit({ auth: req?.user?.accessToken })
   const { data: issues } = await octokit.rest.issues.listForRepo({
     owner: 'endlessm',
     repo: 'godot-block-coding',
@@ -68,32 +65,23 @@ app.get('/', async (req, res) => {
     title: 'Main',
     message: 'Hello there!',
     client_id: CLIENT_ID,
-    user,
+    user: req.user,
     issues,
   })
 })
 
+app.get('/login', passport.authenticate('github'))
+
 app.get('/logout', (req, res) => {
-  req.session.destroy((err) => {
+  req.logout((err) => {
     res.redirect(302, '/')
   })
 })
 
-app.get('/github/callback', async (req, res) => {
-  const code = req.query.code
-  const token_data = await get_token(code)
-  console.log({token_data})
-
-  if (!token_data.access_token) {
-    res.status(token_data.status).render('github/callback', {
-      title: 'Callback',
-      message: token_data.error,
-    })
-  }
-
-  req.session.github_token = token_data.access_token
-  res.redirect(302, '/')
-})
+app.get('/github/callback', passport.authenticate('github', {
+  successReturnToOrRedirect: '/',
+  failureRedirect: '/login'
+}))
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
