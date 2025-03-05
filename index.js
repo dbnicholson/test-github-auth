@@ -42,6 +42,7 @@ passport.use(new GitHubStrategy(
     callbackURL: '/github/callback',
   },
   (accessToken, refreshToken, profile, done) => {
+    console.dir({ profile }, { depth: null })
     const user = {
       id: profile.id,
       username: profile.username,
