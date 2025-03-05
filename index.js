@@ -10,7 +10,7 @@ import { Strategy as GitHubStrategy } from 'passport-github2'
 
 dotenv.config()
 const app = express()
-const port = 3000
+const port = 3003
 const FileStore = sessionFileStore(session)
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
@@ -39,7 +39,7 @@ passport.use(new GitHubStrategy(
   {
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
-    callbackURL: '/github/callback',
+    callbackURL: '/auth/github/callback',
   },
   (accessToken, refreshToken, profile, done) => {
     console.dir({ profile }, { depth: null })
@@ -79,12 +79,12 @@ app.get('/logout', (req, res) => {
   })
 })
 
-app.get('/github/callback', passport.authenticate('github', {
+app.get('/auth/github/callback', passport.authenticate('github', {
   successReturnToOrRedirect: '/',
   failureRedirect: '/login'
 }))
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
-  console.log(`Open http://127.0.0.1:3000`)
+  console.log(`Open http://127.0.0.1:${port}`)
 })
